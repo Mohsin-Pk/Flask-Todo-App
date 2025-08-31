@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+
+  <title>My Todo App</title>
+  <style>
+    .todo-item {
+      transition: all 0.3s ease;
+    }
+    .todo-item:hover {
+      background-color: #f8f9fa;
+    }
+    .completed {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+    .todo-form {
+      background-color: #f8f9fa;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+      <a class="navbar-brand" href="#">📝 My Todo</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <a class="nav-link active" href="#">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">About</a>
+          </li>
+        </ul>
+        <div class="d-flex">
+          <input class="form-control me-2" type="search" placeholder="Search todos..." id="searchInput">
+          <button class="btn btn-outline-light" type="button" onclick="searchTodos()">Search</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container my-4">
+    <!-- Add Todo Form -->
+    <div class="todo-form">
+      <h2 class="mb-4">✨ Add A New Todo</h2>
+      <form id="todoForm">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="title" class="form-label">Todo Title</label>
+            <input type="text" class="form-control" id="title" placeholder="Enter todo title..." required>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="desc" class="form-label">Todo Description</label>
+            <input type="text" class="form-control" id="desc" placeholder="Enter description...">
+          </div>
+        </div>
+        <div class="mb-3">
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" id="priority">
+            <label class="form-check-label" for="priority">
+              🔥 High Priority
+            </label>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg">
+          <span class="me-2">➕</span>Add Todo
+        </button>
+      </form>
+    </div>
+
+    <!-- Todo List -->
+    <div class="row">
+      <div class="col-12">
+        <h2 class="mb-4">📋 Your Todos</h2>
+        <div id="todoStats" class="alert alert-info">
+          <strong>Total: </strong><span id="totalCount">0</span> | 
+          <strong>Completed: </strong><span id="completedCount">0</span> | 
+          <strong>Pending: </strong><span id="pendingCount">0</span>
+        </div>
+        
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead class="table-dark">
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Title</th>
+                <th scope="col">Description</th>
+                <th scope="col">Priority</th>
+                <th scope="col">Created</th>
+                <th scope="col">Status</th>
+                <th scope="col">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="todoTableBody">
+              <!-- Todos will be dynamically added here -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div id="emptyState" class="text-center py-5" style="display: none;">
+          <div class="text-muted">
+            <h4>📝 No todos yet!</h4>
+            <p>Add your first todo above to get started.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+  
+  <script>
+    let todos = [];
+    let todoIdCounter = 1;
+
+    // Load todos from memory on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      // Add some sample todos for demonstration
+      addSampleTodos();
+      renderTodos();
+      updateStats();
+    });
+
+    function addSampleTodos() {
+      todos = [
+        {
+          id: 1,
+          title: "Learn JavaScript",
+          desc: "Complete JavaScript fundamentals course",
+          priority: true,
+          completed: false,
+          createdAt: new Date('2025-08-30T10:00:00')
+        },
+        {
+          id: 2,
+          title: "Buy groceries",
+          desc: "Milk, bread, eggs, and fruits",
+          priority: false,
+          completed: true,
+          createdAt: new Date('2025-08-30T14:30:00')
+        },
+        {
+          id: 3,
+          title: "Exercise",
+          desc: "30 minutes morning workout",
+          priority: true,
+          completed: false,
+          createdAt: new Date('2025-08-31T07:00:00')
+        }
+      ];
+      todoIdCounter = 4;
+    }
+
+    // Handle form submission
+    document.getElementById('todoForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const title = document.getElementById('title').value.trim();
+      const desc = document.getElementById('desc').value.trim();
+      const priority = document.getElementById('priority').checked;
+      
+      if (!title) {
+        alert('Please enter a todo title!');
+        return;
+      }
+      
+      const newTodo = {
+        id: todoIdCounter++,
+        title: title,
+        desc: desc,
+        priority: priority,
+        completed: false,
+        createdAt: new Date()
+      };
+      
+      todos.unshift(newTodo); // Add to beginning of array
+      
+      // Reset form
+      document.getElementById('todoForm').reset();
+      
+      // Re-render todos
+      renderTodos();
+      updateStats();
+      
+      // Show success message
+      showToast('Todo added successfully!', 'success');
+    });
+
+    function renderTodos(filteredTodos = todos) {
+      const tbody = document.getElementById('todoTableBody');
+      const emptyState = document.getElementById('emptyState');
+      
+      if (filteredTodos.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+      }
+      
+      emptyState.style.display = 'none';
+      
+      tbody.innerHTML = filteredTodos.map((todo, index) => `
+        <tr class="todo-item ${todo.completed ? 'completed' : ''}">
+          <th scope="row">${index + 1}</th>
+          <td class="${todo.completed ? 'text-decoration-line-through' : ''}">${todo.title}</td>
+          <td class="${todo.completed ? 'text-decoration-line-through' : ''}">${todo.desc || '-'}</td>
+          <td>
+            ${todo.priority ? '<span class="badge bg-danger">🔥 High</span>' : '<span class="badge bg-secondary">Normal</span>'}
+          </td>
+          <td>${formatDate(todo.createdAt)}</td>
+          <td>
+            ${todo.completed ? 
+              '<span class="badge bg-success">✅ Completed</span>' : 
+              '<span class="badge bg-warning">⏳ Pending</span>'
+            }
+          </td>
+          <td>
+            <div class="btn-group btn-group-sm">
+              <button class="btn ${todo.completed ? 'btn-warning' : 'btn-success'}" 
+                      onclick="toggleComplete(${todo.id})" 
+                      title="${todo.completed ? 'Mark as pending' : 'Mark as complete'}">
+                ${todo.completed ? '↩️' : '✅'}
+              </button>
+              <button class="btn btn-primary" onclick="editTodo(${todo.id})" title="Edit">
+                ✏️
+              </button>
+              <button class="btn btn-danger" onclick="deleteTodo(${todo.id})" title="Delete">
+                🗑️
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function formatDate(date) {
+      return new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(date);
+    }
+
+    function toggleComplete(id) {
+      const todo = todos.find(t => t.id === id);
+      if (todo) {
+        todo.completed = !todo.completed;
+        renderTodos();
+        updateStats();
+        showToast(`Todo marked as ${todo.completed ? 'completed' : 'pending'}!`, 'info');
+      }
+    }
+
+    function editTodo(id) {
+      const todo = todos.find(t => t.id === id);
+      if (todo) {
+        const newTitle = prompt('Edit title:', todo.title);
+        if (newTitle !== null && newTitle.trim()) {
+          const newDesc = prompt('Edit description:', todo.desc);
+          todo.title = newTitle.trim();
+          if (newDesc !== null) {
+            todo.desc = newDesc.trim();
+          }
+          renderTodos();
+          showToast('Todo updated successfully!', 'success');
+        }
+      }
+    }
+
+    function deleteTodo(id) {
+      if (confirm('Are you sure you want to delete this todo?')) {
+        todos = todos.filter(t => t.id !== id);
+        renderTodos();
+        updateStats();
+        showToast('Todo deleted successfully!', 'danger');
+      }
+    }
+
+    function updateStats() {
+      const total = todos.length;
+      const completed = todos.filter(t => t.completed).length;
+      const pending = total - completed;
+      
+      document.getElementById('totalCount').textContent = total;
+      document.getElementById('completedCount').textContent = completed;
+      document.getElementById('pendingCount').textContent = pending;
+    }
+
+    function searchTodos() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+      
+      if (!searchTerm) {
+        renderTodos();
+        return;
+      }
+      
+      const filteredTodos = todos.filter(todo => 
+        todo.title.toLowerCase().includes(searchTerm) || 
+        todo.desc.toLowerCase().includes(searchTerm)
+      );
+      
+      renderTodos(filteredTodos);
+    }
+
+    // Allow search on Enter key
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        searchTodos();
+      }
+    });
+
+    // Clear search when input is empty
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+      if (e.target.value === '') {
+        renderTodos();
+      }
+    });
+
+    function showToast(message, type = 'success') {
+      // Create a simple toast notification
+      const toast = document.createElement('div');
+      toast.className = `alert alert-${type} position-fixed top-0 end-0 m-3`;
+      toast.style.zIndex = '9999';
+      toast.style.minWidth = '300px';
+      toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+      `;
+      
+      document.body.appendChild(toast);
+      
+      // Auto remove after 3 seconds
+      setTimeout(() => {
+        if (toast.parentElement) {
+          toast.remove();
+        }
+      }, 3000);
+    }
+  </script>
+</body>
+
+</html>
